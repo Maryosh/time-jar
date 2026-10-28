@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Time Jar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#1f7a68">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eef3f0;--card:#fff;--ink:#15302a;--muted:#5d7a72;--line:#d3e0da;--accent:#1f7a68;--accent-ink:#fff;--glass:rgba(255,255,255,.55);--glass-line:#7fa99d;--danger:#b3402e;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1c19;--card:#172824;--ink:#e4f1ec;--muted:#93b0a7;--line:#27403a;--accent:#4fc3a8;--accent-ink:#0b1c18;--glass:rgba(255,255,255,.06);--glass-line:#5c8a7e;--danger:#e8806e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1c19;--card:#172824;--ink:#e4f1ec;--muted:#93b0a7;--line:#27403a;--accent:#4fc3a8;--accent-ink:#0b1c18;--glass:rgba(255,255,255,.06);--glass-line:#5c8a7e;--danger:#e8806e;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45}
+main{max-width:480px;margin:0 auto;padding:16px 16px 120px}
+header{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+select,input,button,textarea{font:inherit;color:inherit}
+select{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:700}
+button{min-height:44px;cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 14px;transition:transform .12s,background .2s}
+button:active{transform:scale(.95)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button.danger{color:var(--danger)}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hero{display:flex;flex-direction:column;align-items:center}
+.jar-wrap{width:min(280px,78vw);transform-origin:50% 100%}
+.jar-wrap.hit{animation:wob .55s ease-out}
+.jar-wrap.glow{filter:drop-shadow(0 0 14px var(--accent));transition:filter 1s}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.big{font-family:"DM Serif Display",Georgia,serif;font-size:44px;line-height:1.05;margin:6px 0 0;text-align:center}
+.sub{color:var(--muted);text-align:center;margin:2px 0 0;font-size:14px}
+.bar{width:100%;height:6px;background:var(--line);border-radius:3px;margin:12px 0 4px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px;animation:up .5s ease both}
+.row{display:flex;gap:8px;align-items:center}
+.ctl{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+h2{font-size:15px;margin:0 0 10px;font-weight:700}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stats div{background:var(--bg);border-radius:10px;padding:10px 12px}
+.stats b{display:block;font-size:20px;font-weight:700}
+.stats span{font-size:13px;color:var(--muted)}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+li:first-child{border-top:0}
+li .d{flex:1;min-width:0}
+li .d small{display:block;color:var(--muted)}
+li button{padding:4px 12px;min-height:40px}
+li svg.ico{width:26px;height:26px;flex:none}
+details{margin-top:14px}
+summary{cursor:pointer;color:var(--muted);padding:6px 0}
+textarea{width:100%;min-height:90px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px;margin-top:8px}
+.msg{min-height:20px;font-size:14px;color:var(--muted);margin-top:6px;text-align:center}
+.lbl{font-size:13px;color:var(--muted);display:block;margin:10px 0 4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chips button{padding:8px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:6px}
+.chips button svg{width:18px;height:18px}
+.chips button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);font-weight:700}
+.sw button{width:40px;height:40px;min-height:0;padding:0;border-radius:50%;border:2px solid transparent}
+.sw button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--ink)}
+.shp button{padding:6px;border-radius:10px}
+.shp button svg{width:24px;height:24px}
+.shp button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+#sheet:not([hidden]),#actForm:not([hidden]){animation:up .3s ease both}
+.bump{animation:bump .5s ease}
+#pops{pointer-events:none}
+g.b{cursor:grab;-webkit-tap-highlight-color:transparent}
+#jarWrap svg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#ballBtn{position:fixed;left:16px;right:16px;max-width:448px;margin:0 auto;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:20;font-size:18px;min-height:56px;border-radius:28px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:25;display:none;animation:fade .25s both}
+body:has(#sheet:not([hidden])) #scrim,body:has(#editCard:not([hidden])) #scrim{display:block}
+#sheet,#editCard{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;z-index:30;background:var(--card);border:0;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+#sheet:not([hidden]),#editCard:not([hidden]){animation:sheetUp .38s cubic-bezier(.2,.9,.25,1) both}
+@keyframes sheetUp{from{transform:translateY(100%)}}
+@keyframes fade{from{opacity:0}}
+g.b:hover{filter:brightness(1.12)}
+@keyframes up{from{opacity:0;transform:translateY(12px)}}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(.4deg)}}
+@keyframes wob{0%,100%{transform:rotate(0)}20%{transform:rotate(-2.4deg) scaleY(.985)}45%{transform:rotate(1.8deg)}70%{transform:rotate(-.8deg)}}
+@keyframes bump{40%{transform:scale(1.12)}}
+@keyframes drop{
+ 0%{transform:translateY(-300px) rotate(-140deg);opacity:0;animation-timing-function:cubic-bezier(.5,0,1,.6)}
+ 10%{opacity:1}
+ 66%{transform:translateY(0) rotate(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+ 80%{transform:translateY(-18px);animation-timing-function:cubic-bezier(.6,0,.8,.4)}
+ 90%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+ 95%{transform:translateY(-4px)}100%{transform:translateY(0)}}
+@keyframes pop{from{transform:scale(.8);opacity:.9}to{transform:scale(2.6);opacity:0}}
+g.new{animation:drop 1s both;animation-delay:var(--d);transform-box:fill-box;transform-origin:center}
+g.new.fast{animation-duration:.7s}
+circle.pop{animation:pop .6s ease-out both;animation-delay:var(--d);transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <select id="jarSel" aria-label="Choose jar"></select>
+    <button id="themeBtn" aria-label="Toggle light or dark">◐</button>
+  </header>
+
+  <section class="hero">
+    <div class="jar-wrap" id="jarWrap">
+      <svg viewBox="0 0 240 280" aria-label="Jar filling with balls">
+        <defs><clipPath id="clip"><path d="M30 62 Q16 72 16 104 L16 238 Q16 258 36 258 L204 258 Q224 258 224 238 L224 104 Q224 72 210 62 Z"/></clipPath></defs>
+        <path d="M30 62 Q16 72 16 104 L16 238 Q16 258 36 258 L204 258 Q224 258 224 238 L224 104 Q224 72 210 62 Z" fill="var(--glass)"/>
+        <g id="balls"></g>
+        <g id="pops"></g>
+        <path d="M30 62 Q16 72 16 104 L16 238 Q16 258 36 258 L204 258 Q224 258 224 238 L224 104 Q224 72 210 62" fill="none" stroke="var(--glass-line)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M22 58 L30 62 M218 58 L210 62" fill="none" stroke="var(--glass-line)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M44 120 Q38 150 40 200" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <p class="big" id="total">0m</p>
+    <p class="sub" id="goalTxt"></p>
+    <div class="bar"><i id="barFill"></i></div>
+  </section>
+
+  <div class="msg" id="msg"></div>
+  <button class="primary" id="ballBtn">Add a ball</button>
+  <div id="scrim"></div>
+  <div id="sheet" hidden>
+      <label class="lbl">Which activity?</label>
+      <div class="chips" id="actChips"></div>
+      <label class="lbl" for="manMin">How long was this session?</label>
+      <div class="chips" id="chips">
+        <button data-m="15">15m</button><button data-m="30">30m</button><button data-m="45">45m</button><button data-m="60">1h</button><button data-m="90">1h 30m</button><button data-m="120">2h</button>
+      </div>
+      <input class="ctl" id="manMin" type="number" inputmode="numeric" min="1" max="1440" placeholder="Or type minutes">
+      <label class="lbl" for="dateIn">Day it happened</label>
+      <input class="ctl" id="dateIn" type="date">
+      <div class="row" style="margin-top:12px"><button class="primary" id="addBtn">Drop the ball</button><button id="cancelBtn">Cancel</button></div>
+  </div>
+
+  <section class="card" id="editCard" hidden>
+    <h2 id="editTitle">Edit ball</h2>
+    <label class="lbl" for="eAct">Activity (pick one from another jar to move it there)</label>
+    <select class="ctl" id="eAct"></select>
+    <label class="lbl" for="eMin">Minutes</label>
+    <input class="ctl" id="eMin" type="number" inputmode="numeric" min="1" max="1440">
+    <label class="lbl" for="eDate">Day</label>
+    <input class="ctl" id="eDate" type="date">
+    <label class="lbl">Position in the jar</label>
+    <div class="row"><button id="eEarlier">← Earlier</button><button id="eLater">Later →</button></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="eSave">Save</button><button id="eCancel">Cancel</button><button class="danger" id="eDel">Delete</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Activities</h2>
+    <ul id="actList"></ul>
+    <button id="newActBtn" style="margin-top:8px">Add activity</button>
+    <div id="actForm" hidden>
+      <label class="lbl" for="actName">Name</label>
+      <input class="ctl" id="actName" maxlength="30" placeholder="e.g. Reading">
+      <label class="lbl">Colour</label>
+      <div class="chips sw" id="swatches"></div>
+      <label class="lbl">Style</label>
+      <div class="chips shp" id="shapes"></div>
+      <div class="row" style="margin-top:8px"><button class="primary" id="actSave">Save activity</button><button id="actCancel">Cancel</button><button class="danger" id="actDel" hidden>Delete</button></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Stats</h2>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="card">
+    <h2>Recent sessions</h2>
+    <ul id="list"></ul>
+    <button id="moreBtn" style="margin-top:8px" hidden>Show all sessions</button>
+    <p class="sub" style="text-align:left;margin-top:8px">Tip: tap any ball in the jar to edit, move or delete it.</p>
+  </section>
+
+  <details>
+    <summary>Jar settings</summary>
+    <div class="card">
+      <label class="lbl" for="nameIn">Jar name</label>
+      <input class="ctl" id="nameIn">
+      <label class="lbl" for="goalIn">Goal (number of balls, up to 110)</label>
+      <input class="ctl" id="goalIn" type="number" min="1">
+      <label class="lbl" for="goalH">Time goal in hours (optional, leave empty for none)</label>
+      <input class="ctl" id="goalH" type="number" inputmode="decimal" min="0" step="0.5" placeholder="e.g. 40">
+      <div class="row" style="margin-top:12px"><button class="primary" id="saveSet">Save settings</button><button class="danger" id="delJar">Delete jar</button></div>
+      <label class="lbl" for="newName">New jar (for a separate set of activities)</label>
+      <div class="row"><input class="ctl" id="newName" placeholder="Jar name"><button id="newJar">Add jar</button></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Sync and backup</summary>
+    <div class="card">
+      <p class="sub" id="syncSt" style="text-align:left;margin:0">Checking sync…</p>
+      <textarea id="backup" aria-label="Backup data"></textarea>
+      <div class="row" style="margin-top:8px"><button id="expBtn">Show backup</button><button id="impBtn">Restore from text</button></div>
+      <div class="row" style="margin-top:8px"><button id="fileSave">Save backup file</button><button id="fileLoad">Load backup file</button><input type="file" id="fileIn" accept=".json,application/json" hidden></div>
+    </div>
+  </details>
+</main>
+
+<script>
+(function(){
+var KEY='time-jar.v1',CAP=110,R=8.5;
+var COLS=['#e4572e','#f2a541','#e9c622','#6bbf59','#2fa39a','#3d8bd9','#6f5fd6','#c850b0','#e8708a','#8a97a0'];
+var SHAPES=['solid','ring','marble','star','square'];
+var S=null,editS=null,showAll=false,lastN={},lastT={},armed={},selAct=null,form={id:null,color:COLS[5],shape:'solid'},dbRef=null,pushT=null;
+var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+function $(id){return document.getElementById(id)}
+function uid(){return Math.random().toString(36).slice(2,9)}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmt(sec){var m=Math.round(sec/60);if(sec<60&&sec>0)return Math.round(sec)+'s';var h=Math.floor(m/60),r=m%60;return h?(h+'h '+(r<10?'0':'')+r+'m'):(m+'m')}
+function newJar(n){return {id:'j'+uid(),name:n,goal:50,acts:[{id:'a'+uid(),name:'General',color:COLS[5],shape:'solid'}],sessions:[]}}
+function migrate(d){
+  if(!d||!Array.isArray(d.jars)||!d.jars.length){var j=newJar('My jar');d={jars:[j],cur:j.id}}
+  d.jars.forEach(function(j){
+    if(!j.acts||!j.acts.length)j.acts=[{id:'a'+uid(),name:'General',color:COLS[5],shape:'solid'}];
+    j.sessions=j.sessions||[];j.goal=j.goal||50;j.goalH=j.goalH||0;
+    j.sessions.forEach(function(s){if(!s.a||!j.acts.some(function(a){return a.id===s.a}))s.a=j.acts[0].id});
+  });
+  if(!d.jars.some(function(j){return j.id===d.cur}))d.cur=d.jars[0].id;
+  return d;
+}
+function load(){var d=null;try{d=JSON.parse(localStorage.getItem(KEY))}catch(e){}S=migrate(d);if(d&&d.updated)S.updated=d.updated}
+function save(){S.updated=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}clearTimeout(pushT);pushT=setTimeout(pushNow,700)}
+function jar(){return S.jars.filter(function(j){return j.id===S.cur})[0]}
+function act(j,id){return j.acts.filter(function(a){return a.id===id})[0]||j.acts[0]}
+
+function shape(x,y,col,sh){
+  var r=R-.6,hl='<circle cx="'+(x-r*.35).toFixed(1)+'" cy="'+(y-r*.38).toFixed(1)+'" r="'+(r*.28).toFixed(1)+'" fill="#fff" fill-opacity=".45"/>';
+  if(sh==='ring')return '<circle cx="'+x+'" cy="'+y+'" r="'+(r-1.8)+'" fill="'+col+'" fill-opacity=".22" stroke="'+col+'" stroke-width="3.2"/>';
+  if(sh==='square')return '<rect x="'+(x-r+.4)+'" y="'+(y-r+.4)+'" width="'+(2*r-.8)+'" height="'+(2*r-.8)+'" rx="3" fill="'+col+'"/><rect x="'+(x-r+2.2)+'" y="'+(y-r+2.2)+'" width="4" height="4" rx="1.5" fill="#fff" fill-opacity=".4"/>';
+  if(sh==='star'){var p=[],k,a,d;for(k=0;k<10;k++){a=-Math.PI/2+k*Math.PI/5;d=k%2?3.9:r+.6;p.push((x+Math.cos(a)*d).toFixed(1)+','+(y+Math.sin(a)*d).toFixed(1))}return '<polygon points="'+p.join(' ')+'" fill="'+col+'" stroke="'+col+'" stroke-width="1.4" stroke-linejoin="round"/>'}
+  if(sh==='marble')return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+col+'"/><path d="M'+(x-r*.8)+' '+(y+r*.1)+' Q'+x+' '+(y-r*.9)+' '+(x+r*.8)+' '+(y+r*.15)+'" stroke="#fff" stroke-opacity=".55" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="'+x+'" cy="'+y+'" r="'+(r*.34)+'" fill="#fff" fill-opacity=".28"/>';
+  return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+col+'"/>'+hl;
+}
+function ico(col,sh,cls){return '<svg class="'+(cls||'')+'" viewBox="-10 -10 20 20" aria-hidden="true">'+shape(0,0,col,sh)+'</svg>'}
+
+var POS=[];(function(){var row=0,y,n,x0,k;while(POS.length<CAP+20){n=row%2?10:11;x0=row%2?20+6.5+R*2:20+6.5+R;y=250-R-row*14.7;for(k=0;k<n;k++)POS.push([x0+k*2*R,y]);row++}})();
+
+function tween(el,from,to,delay){
+  if(reduced||from===to){el.textContent=fmt(to);return}
+  setTimeout(function(){var t0=performance.now();function f(t){var p=Math.min(1,(t-t0)/800),e=1-Math.pow(1-p,3);el.textContent=fmt(from+(to-from)*e);if(p<1)requestAnimationFrame(f)}requestAnimationFrame(f)},delay||0);
+}
+function retrigger(el,cls,delay){setTimeout(function(){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls)},delay)}
+
+/* Physics: Verlet circles in the jar, with drag and fling */
+var sim=null,nodes=[],selEl=null,selIdx=-1,raf=0,last=0,acc=0,calm=0,age=0,grab=null,quiet=false,lastVib=0,GX0=19.5,GX1=220.5,FLOOR=255;
+var svgEl=document.querySelector('#jarWrap svg');
+function rnd(i){var x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+function mk(x,y){return {x:x,y:y,px:x,py:y,a:0}}
+function thud(v){var t=performance.now();if(t-lastVib>90&&navigator.vibrate){lastVib=t;try{navigator.vibrate(Math.min(12,Math.round(v*3)))}catch(e){}}}
+function stepSim(){
+  var B=sim.balls,n=B.length,i,j,b,c,dx,dy,d,o,v,it,wi,wj,vx,vy,mx=0,D=2*R-.3,D2=D*D,gb=grab&&grab.b;
+  for(i=0;i<n;i++){
+    b=B[i];
+    if(b===gb){dx=(grab.x-b.x)*.35;dy=(grab.y-b.y)*.35;if(dx>9)dx=9;if(dx<-9)dx=-9;if(dy>9)dy=9;if(dy<-9)dy=-9;b.px=b.x;b.py=b.y;b.x+=dx;b.y+=dy;continue}
+    vx=(b.x-b.px)*.9985;vy=(b.y-b.py)*.9985;
+    if(vx>9)vx=9;if(vx<-9)vx=-9;if(vy>9)vy=9;if(vy<-9)vy=-9;
+    b.px=b.x;b.py=b.y;b.x+=vx;b.y+=vy+.12;b.a+=vx/R*.55;
+  }
+  for(it=0;it<7;it++){
+    for(i=0;i<n;i++){
+      b=B[i];
+      if(b.x<GX0+R){v=b.x-b.px;b.x=GX0+R;if(it===0)b.px=b.x+v*.25}
+      else if(b.x>GX1-R){v=b.x-b.px;b.x=GX1-R;if(it===0)b.px=b.x+v*.25}
+      if(b.y>FLOOR-R){v=b.y-b.py;b.y=FLOOR-R;if(it===0){b.py=b.y+v*.25;b.px=b.x-(b.x-b.px)*.88;if(v>2.4&&!quiet)thud(v)}}
+      for(j=i+1;j<n;j++){
+        c=B[j];dx=c.x-b.x;if(dx>D||dx<-D)continue;dy=c.y-b.y;d=dx*dx+dy*dy;
+        if(d<D2&&d>1e-8){d=Math.sqrt(d);o=(D-d)/d;wi=b===gb?0:.5;wj=c===gb?0:.5;if(!wi&&wj)wj=1;else if(!wj&&wi)wi=1;b.x-=dx*o*wi;b.y-=dy*o*wi;c.x+=dx*o*wj;c.y+=dy*o*wj}
+      }
+    }
+  }
+  for(i=0;i<n;i++){b=B[i];v=Math.abs(b.x-b.px)+Math.abs(b.y-b.py);if(v>mx)mx=v}
+  calm=(mx<.06&&!gb)?calm+1:0;
+}
+function place(){
+  if(!sim)return;var B=sim.balls,i,b;
+  for(i=0;i<nodes.length&&i<B.length;i++){b=B[i];nodes[i].setAttribute('transform','translate('+b.x.toFixed(2)+' '+b.y.toFixed(2)+') rotate('+(b.a*57.296).toFixed(1)+')'+(grab&&grab.b===b?' scale(1.22)':''))}
+  if(selEl&&selIdx>=0&&B[selIdx])selEl.setAttribute('transform','translate('+B[selIdx].x.toFixed(2)+' '+B[selIdx].y.toFixed(2)+')');
+}
+function settle(){raf=0;if(!sim)return;sim.balls.forEach(function(b){b.px=b.x;b.py=b.y});calm=0;place()}
+function tickSim(t){
+  raf=0;if(!sim)return;
+  var dt=Math.min(.034,(t-last)/1000||.016),steps=0;last=t;acc+=dt;age+=dt;
+  while(acc>=1/120&&steps<6){stepSim();acc-=1/120;steps++}
+  if(steps===6)acc=0;
+  place();
+  if(!grab&&(calm>45||age>4.5)){settle();return}
+  raf=requestAnimationFrame(tickSim);
+}
+function wake(){calm=0;age=0;if(!raf&&sim&&sim.balls.length){last=performance.now();acc=0;raf=requestAnimationFrame(tickSim)}}
+function syncBalls(j,n){
+  var k=0,i,b;
+  if(!sim||sim.jid!==j.id||n<sim.balls.length||reduced){
+    sim={jid:j.id,balls:[]};calm=0;quiet=true;
+    for(i=0;i<n;i++)sim.balls.push(mk(POS[i][0]+(rnd(i)-.5)*6,POS[i][1]-rnd(i+99)*3));
+    for(i=0;i<260&&calm<30;i++)stepSim();
+    quiet=false;settle();
+  }else{
+    for(i=sim.balls.length;i<n;i++){b=mk(60+Math.random()*120,-16-k*24);b.py=b.y-1.5;b.px=b.x-(Math.random()-.5)*.8;sim.balls.push(b);k++}
+  }
+  return k;
+}
+function svgPt(e){var p=svgEl.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svgEl.getScreenCTM().inverse())}
+svgEl.addEventListener('touchstart',function(e){if(e.target.closest&&e.target.closest('g[data-i]'))e.preventDefault()},{passive:false});
+svgEl.addEventListener('pointerdown',function(e){
+  var g=e.target.closest('g[data-i]');if(!g||!sim)return;
+  var i=+g.getAttribute('data-i'),b=sim.balls[i];if(!b)return;
+  var p=svgPt(e);grab={b:b,i:i,x:p.x,y:p.y,cx:e.clientX,cy:e.clientY,t:performance.now(),moved:false,id:e.pointerId};
+  try{svgEl.setPointerCapture(e.pointerId)}catch(x){}
+  if(navigator.vibrate){try{navigator.vibrate(6)}catch(x){}}
+  wake();e.preventDefault();
+});
+svgEl.addEventListener('pointermove',function(e){
+  if(!grab||e.pointerId!==grab.id)return;var p=svgPt(e);
+  grab.x=Math.max(GX0+R,Math.min(GX1-R,p.x));grab.y=Math.max(-40,Math.min(FLOOR-R,p.y));
+  if(Math.abs(e.clientX-grab.cx)+Math.abs(e.clientY-grab.cy)>7)grab.moved=true;
+});
+function endGrab(e,cancel){
+  if(!grab||e.pointerId!==grab.id)return;var g=grab;grab=null;wake();
+  if(!cancel&&!g.moved&&performance.now()-g.t<500){var s=jar().sessions[g.i];if(s)openEdit(s)}
+}
+svgEl.addEventListener('pointerup',function(e){endGrab(e,false)});
+svgEl.addEventListener('pointercancel',function(e){endGrab(e,true)});
+
+function render(){
+  var j=jar(),T=0,i,k=0;
+  j.sessions.forEach(function(s){T+=s.s});
+  $('jarSel').innerHTML=S.jars.map(function(x){return '<option value="'+x.id+'"'+(x.id===S.cur?' selected':'')+'>'+esc(x.name)+'</option>'}).join('');
+  var cnt=j.sessions.length,n=Math.min(cnt,CAP),intro=lastN[j.id]===undefined,prev=intro?0:Math.min(lastN[j.id],n);
+  var out='',ei=-1,wrap=$('jarWrap');
+  k=syncBalls(j,n);
+  for(i=0;i<n;i++){var a=act(j,j.sessions[i].a);out+='<g class="b" data-i="'+i+'"><g class="sp">'+shape(0,0,a.color,a.shape)+'</g></g>'}
+  $('balls').innerHTML=out;nodes=$('balls').querySelectorAll('g.sp');
+  if(editS)ei=j.sessions.indexOf(editS);
+  selIdx=(ei>=0&&ei<n)?ei:-1;
+  $('pops').innerHTML=selIdx>=0?'<circle r="'+(R+1)+'" fill="none" stroke="var(--ink)" stroke-width="1.8" stroke-dasharray="3 2.5"/>':'';
+  selEl=$('pops').firstChild;place();wake();
+  var landDelay=k?520:0;
+  if(!intro&&(j.goalH>0?(T>=j.goalH*3600&&(lastT[j.id]||0)<j.goalH*3600):(cnt>=j.goal&&(lastN[j.id]||0)<j.goal))){retrigger(wrap,'glow',landDelay+300);setTimeout(function(){wrap.classList.remove('glow')},4500)}
+  tween($('total'),lastT[j.id]||0,T,intro?0:landDelay);
+  lastN[j.id]=cnt;lastT[j.id]=T;
+  var gs=j.goalH*3600,pct=gs>0?Math.min(100,T/gs*100):Math.min(100,cnt/j.goal*100);
+  setTimeout(function(){$('barFill').style.width=pct+'%'},intro?50:landDelay);
+  $('goalTxt').textContent=gs>0?'Goal '+fmt(gs)+' · '+(T>=gs?'reached!':fmt(gs-T)+' to go')+' · '+cnt+(cnt===1?' ball':' balls'):cnt+(cnt===1?' ball':' balls')+' · '+(cnt>=j.goal?'goal of '+j.goal+' reached!':'goal is '+j.goal);
+
+  var avg=cnt?T/cnt:0,longest=0,week=0,days={},now=Date.now();
+  j.sessions.forEach(function(s){if(s.s>longest)longest=s.s;if(now-s.t<7*864e5)week+=s.s;days[new Date(s.t).toDateString()]=1});
+  var st=[['Total time',fmt(T)],['Sessions',cnt],['Average session',cnt?fmt(avg):'–'],['Longest session',cnt?fmt(longest):'–'],['Last 7 days',fmt(week)],['Days with time',Object.keys(days).length]];
+  $('stats').innerHTML=st.map(function(x){return '<div><b>'+x[1]+'</b><span>'+x[0]+'</span></div>'}).join('');
+
+  $('actList').innerHTML=j.acts.map(function(a){
+    var c=0,t=0;j.sessions.forEach(function(s){if(s.a===a.id){c++;t+=s.s}});
+    return '<li>'+ico(a.color,a.shape,'ico')+'<span class="d"><b>'+esc(a.name)+'</b><small>'+(c?c+(c===1?' session':' sessions')+' · '+fmt(t)+' · avg '+fmt(t/c):'No sessions yet')+'</small></span><button data-edit="'+a.id+'">Edit</button></li>';
+  }).join('');
+
+  var rec=j.sessions.map(function(s){return s}).sort(function(x,y){return y.t-x.t}).slice(0,showAll?99999:10);
+  $('list').innerHTML=rec.length?rec.map(function(s){
+    var a=act(j,s.a),dt=new Date(s.t);
+    return '<li>'+ico(a.color,a.shape,'ico')+'<span class="d"><b>'+fmt(s.s)+' · '+esc(a.name)+'</b><small>'+dt.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})+'</small></span><button data-editball="'+s.t+'">Edit</button></li>';
+  }).join(''):'<li class="sub" style="display:block">No balls yet. Tap Add a ball to drop your first one.</li>';
+  $('moreBtn').hidden=j.sessions.length<=10;$('moreBtn').textContent=showAll?'Show fewer':'Show all sessions';
+  $('nameIn').value=j.name;$('goalIn').value=j.goal;$('goalH').value=j.goalH||'';
+  renderChips();
+}
+function renderChips(){
+  var j=jar();if(!selAct||!j.acts.some(function(a){return a.id===selAct}))selAct=j.lastAct&&j.acts.some(function(a){return a.id===j.lastAct})?j.lastAct:j.acts[0].id;
+  $('actChips').innerHTML=j.acts.map(function(a){return '<button data-a="'+a.id+'" aria-pressed="'+(a.id===selAct)+'">'+ico(a.color,a.shape)+esc(a.name)+'</button>'}).join('');
+}
+function renderForm(){
+  $('swatches').innerHTML=COLS.map(function(c){return '<button data-c="'+c+'" style="background:'+c+'" aria-label="Colour '+c+'" aria-pressed="'+(c===form.color)+'"></button>'}).join('');
+  $('shapes').innerHTML=SHAPES.map(function(s){return '<button data-sh="'+s+'" aria-label="Style '+s+'" aria-pressed="'+(s===form.shape)+'">'+ico(form.color,s)+'</button>'}).join('');
+}
+function msg(t){$('msg').textContent=t;if(t)setTimeout(function(){if($('msg').textContent===t)$('msg').textContent=''},3500)}
+function twoTap(btn,key,label,fn){
+  if(armed[key]){clearTimeout(armed[key]);armed[key]=null;fn();return}
+  var old=btn.textContent;btn.textContent=label;
+  armed[key]=setTimeout(function(){armed[key]=null;btn.textContent=old},3000);
+}
+function today(){var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)}
+function closeSheet(){$('sheet').hidden=true;$('ballBtn').hidden=false;$('manMin').value=''}
+function openForm(a){
+  form=a?{id:a.id,color:a.color,shape:a.shape}:{id:null,color:COLS[Math.floor(Math.random()*COLS.length)],shape:'solid'};
+  $('actName').value=a?a.name:'';$('actDel').hidden=!a||jar().acts.length<2;
+  $('actForm').hidden=false;$('newActBtn').hidden=true;renderForm();$('actName').focus();
+}
+function closeForm(){$('actForm').hidden=true;$('newActBtn').hidden=false}
+
+$('jarSel').addEventListener('change',function(e){S.cur=e.target.value;selAct=null;resetEdit();save();render()});
+$('ballBtn').addEventListener('click',function(){$('sheet').hidden=false;$('ballBtn').hidden=true;$('dateIn').value=today();$('dateIn').max=today();renderChips()});
+$('cancelBtn').addEventListener('click',closeSheet);
+$('chips').addEventListener('click',function(e){var b=e.target.closest('button[data-m]');if(b)$('manMin').value=b.getAttribute('data-m')});
+$('actChips').addEventListener('click',function(e){var b=e.target.closest('button[data-a]');if(b){selAct=b.getAttribute('data-a');renderChips()}});
+$('addBtn').addEventListener('click',function(){
+  var v=parseFloat($('manMin').value);
+  if(!(v>=1)){msg('Pick a time or type the minutes first.');return}
+  var ds=$('dateIn').value||today(),t=Date.now(),j=jar();
+  if(ds!==today()){var p=ds.split('-');t=new Date(+p[0],+p[1]-1,+p[2],12,0,0).getTime()+Math.floor(Math.random()*60000)}
+  j.sessions.push({t:t,s:Math.round(Math.min(v,1440)*60),a:selAct});j.lastAct=selAct;
+  closeSheet();save();render();msg('Ball added: '+fmt(v*60)+'.');
+});
+function resetEdit(){editS=null;$('editCard').hidden=true}
+function closeEdit(){resetEdit();render()}
+function openEdit(s){
+  var j=jar();editS=s;var opts='';
+  S.jars.forEach(function(jj){jj.acts.forEach(function(a){opts+='<option value="'+jj.id+'|'+a.id+'"'+(jj.id===j.id&&a.id===s.a?' selected':'')+'>'+esc(a.name)+(S.jars.length>1?' — '+esc(jj.name):'')+'</option>'})});
+  $('eAct').innerHTML=opts;$('eMin').value=Math.round(s.s/60);
+  var d=new Date(s.t);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());$('eDate').value=d.toISOString().slice(0,10);$('eDate').max=today();
+  $('editTitle').textContent='Edit ball '+(j.sessions.indexOf(s)+1)+' of '+j.sessions.length;
+  $('editCard').hidden=false;render();$('editCard').scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});
+}
+function moveBall(dx){
+  var j=jar(),i=j.sessions.indexOf(editS),k=i+dx;if(i<0||k<0||k>=j.sessions.length)return;
+  var tmp=j.sessions[i];j.sessions[i]=j.sessions[k];j.sessions[k]=tmp;save();render();
+  $('editTitle').textContent='Edit ball '+(k+1)+' of '+j.sessions.length;
+}
+$('scrim').addEventListener('click',function(){if(!$('sheet').hidden)closeSheet();if(!$('editCard').hidden)closeEdit()});
+$('list').addEventListener('click',function(e){
+  var b=e.target.closest('button[data-editball]');if(!b)return;var t=+b.getAttribute('data-editball');
+  var s=jar().sessions.filter(function(x){return x.t===t})[0];if(s)openEdit(s);
+});
+$('moreBtn').addEventListener('click',function(){showAll=!showAll;render()});
+$('eCancel').addEventListener('click',closeEdit);
+$('eEarlier').addEventListener('click',function(){moveBall(-1)});
+$('eLater').addEventListener('click',function(){moveBall(1)});
+$('eSave').addEventListener('click',function(){
+  var v=parseFloat($('eMin').value);if(!(v>=1)){msg('Enter minutes, 1 or more.');return}
+  var s=editS,j=jar();if(!s)return;
+  var parts=$('eAct').value.split('|'),tj=S.jars.filter(function(x){return x.id===parts[0]})[0]||j;
+  s.s=Math.round(Math.min(v,1440)*60);s.a=parts[1];
+  var ds=$('eDate').value||today(),od=new Date(s.t);od.setMinutes(od.getMinutes()-od.getTimezoneOffset());
+  if(ds!==od.toISOString().slice(0,10)){var p=ds.split('-');s.t=ds===today()?Date.now():new Date(+p[0],+p[1]-1,+p[2],12,0,0).getTime()+Math.floor(Math.random()*60000)}
+  if(tj!==j){j.sessions.splice(j.sessions.indexOf(s),1);tj.sessions.push(s)}
+  resetEdit();save();render();msg(tj!==j?'Moved to '+tj.name+'.':'Ball updated.');
+});
+$('eDel').addEventListener('click',function(){
+  twoTap($('eDel'),'eball','Tap again to delete',function(){
+    var j=jar(),i=j.sessions.indexOf(editS);if(i>=0)j.sessions.splice(i,1);
+    resetEdit();save();render();$('eDel').textContent='Delete';
+  });
+});
+$('fileSave').addEventListener('click',async function(){
+  var name='time-jar-backup-'+today()+'.json',data=JSON.stringify(S,null,1);
+  try{var c=window.claude,dl=c&&c.use?await c.use('downloads'):null;if(dl){await dl.save({filename:name,data:data});return}}catch(e){}
+  try{var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+  catch(e){msg('Could not save a file here. Use Show backup and copy the text instead.')}
+});
+$('fileLoad').addEventListener('click',function(){$('fileIn').click()});
+$('fileIn').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){$('backup').value=r.result;$('impBtn').click()};r.readAsText(f);e.target.value=''});
+$('newActBtn').addEventListener('click',function(){openForm(null)});
+$('actCancel').addEventListener('click',closeForm);
+$('actList').addEventListener('click',function(e){var b=e.target.closest('button[data-edit]');if(b){var id=b.getAttribute('data-edit');openForm(act(jar(),id))}});
+$('swatches').addEventListener('click',function(e){var b=e.target.closest('button[data-c]');if(b){form.color=b.getAttribute('data-c');renderForm()}});
+$('shapes').addEventListener('click',function(e){var b=e.target.closest('button[data-sh]');if(b){form.shape=b.getAttribute('data-sh');renderForm()}});
+$('actSave').addEventListener('click',function(){
+  var n=$('actName').value.trim(),j=jar();if(!n){msg('Give the activity a name.');return}
+  if(form.id){var a=act(j,form.id);a.name=n;a.color=form.color;a.shape=form.shape}
+  else{var id='a'+uid();j.acts.push({id:id,name:n,color:form.color,shape:form.shape});selAct=id}
+  closeForm();lastN[j.id]=undefined;save();render();
+});
+$('actDel').addEventListener('click',function(){
+  twoTap($('actDel'),'act','Tap again to delete',function(){
+    var j=jar();j.acts=j.acts.filter(function(a){return a.id!==form.id});
+    j.sessions.forEach(function(s){if(s.a===form.id)s.a=j.acts[0].id});
+    selAct=null;closeForm();save();render();$('actDel').textContent='Delete';
+  });
+});
+$('saveSet').addEventListener('click',function(){
+  var j=jar(),n=$('nameIn').value.trim(),g=parseFloat($('goalIn').value);
+  if(n)j.name=n;if(g>=1)j.goal=Math.min(Math.round(g),CAP);var gh=parseFloat($('goalH').value);j.goalH=gh>0?Math.min(gh,100000):0;save();render();msg('Settings saved.');
+});
+$('newJar').addEventListener('click',function(){
+  var n=$('newName').value.trim();if(!n){msg('Give the new jar a name.');return}
+  var j=newJar(n);S.jars.push(j);S.cur=j.id;selAct=null;$('newName').value='';save();render();
+});
+$('delJar').addEventListener('click',function(){
+  var b=$('delJar');
+  twoTap(b,'jar','Tap again to delete',function(){
+    S.jars=S.jars.filter(function(x){return x.id!==S.cur});
+    if(!S.jars.length)S.jars.push(newJar('My jar'));
+    S.cur=S.jars[0].id;selAct=null;save();render();b.textContent='Delete jar';
+  });
+});
+$('expBtn').addEventListener('click',function(){var t=$('backup');t.value=JSON.stringify(S);t.focus();t.select()});
+$('impBtn').addEventListener('click',function(){
+  try{var d=JSON.parse($('backup').value);if(!d||!Array.isArray(d.jars)||!d.jars.length)throw 0;
+    var th=S.theme;S=migrate(d);S.theme=th;lastN={};lastT={};selAct=null;save();render();msg('Backup restored.')}
+  catch(e){msg('That text is not a valid backup.')}
+});
+$('themeBtn').addEventListener('click',function(){
+  var de=document.documentElement,dark=de.getAttribute('data-theme')==='dark'||(!de.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches);
+  var nx=dark?'light':'dark';de.setAttribute('data-theme',nx);S.theme=nx;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+});
+
+/* Sync: private per-account copy via the page's db capability */
+function syncStatus(t){$('syncSt').textContent=t}
+function pushNow(){
+  if(!dbRef)return;
+  dbRef.set({json:JSON.stringify(S),updated:S.updated||Date.now()}).then(function(){syncStatus('Sync is on. Open this link signed in to the same Claude account on any device. Last saved '+new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})+'.')}).catch(function(){syncStatus('Sync hit a problem. Your data is still saved on this device.')});
+}
+async function initSync(){
+  try{
+    var c=window.claude;if(!c||!c.use){syncStatus('Sync is off here. Your data is saved on this device only, so use Save backup file now and then.');return}
+    var db=await c.use('db'),user=await c.use('user');
+    if(!db||!user){syncStatus('Sync is off. Sign in to Claude and open the link there to turn it on. Data is saved on this device.');return}
+    var id=await user.id();
+    if(!id){syncStatus('Sync is off for this view. Data is saved on this device.');return}
+    dbRef=db.doc('data/users/'+id+'/app');
+    dbRef.onSnapshot(function(snap){
+      if(!snap.exists){pushNow();return}
+      var d=snap.data()||{},ru=d.updated||0,lu=S.updated||0;
+      if(ru>lu){
+        try{var r=migrate(JSON.parse(d.json));r.theme=S.theme;r.updated=ru;S=r;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}selAct=null;resetEdit();render();syncStatus('Sync is on. Updated from another device.')}catch(e){}
+      }else if(ru<lu){pushNow()}
+      else syncStatus('Sync is on. Everything is up to date.');
+    },function(){syncStatus('Sync is off. Data is saved on this device.')});
+  }catch(e){syncStatus('Sync is off. Data is saved on this device.')}
+}
+
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+load();
+if(S.theme)document.documentElement.setAttribute('data-theme',S.theme);
+render();
+initSync();
+})();
+</script>
+</body>
+</html>
